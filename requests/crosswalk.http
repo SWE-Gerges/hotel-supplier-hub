@@ -1,0 +1,50 @@
+# City crosswalk: match each supplier's city list to canonical cities. All of it needs the admin key.
+# The API runs the crosswalk once at start-up, so the three demo cities are already mapped for every supplier.
+
+@baseUrl = http://localhost:5104
+@adminKey = dev-admin-key-0000-not-a-secret
+
+### 1. Run the crosswalk: clear matches are accepted, the rest is queued for review, nothing decided is changed (200)
+POST {{baseUrl}}/api/v1/mapping/crosswalk/runs
+X-Api-Key: {{adminKey}}
+
+### 2. The supplier city codes that mean a canonical city, for one supplier (200)
+GET {{baseUrl}}/api/v1/mapping/crosswalk/entries?supplier=supplier-c
+X-Api-Key: {{adminKey}}
+
+### 3. The review list: cities the matcher would not decide, with the best candidates and the reason (200)
+# @name review
+GET {{baseUrl}}/api/v1/mapping/crosswalk/review?supplier=supplier-c
+X-Api-Key: {{adminKey}}
+
+### 4. Approve one: map the supplier city to a canonical city (200; 409 if the supplier already has a code for it)
+# The list is ordered by id. For supplier-c on a fresh database it holds NOWHEREVILLE first (a name that matches no canonical
+# city well) and ALDERMOOR-ZZ second (a country the alias table does not know). Index [0] is NOWHEREVILLE.
+POST {{baseUrl}}/api/v1/mapping/crosswalk/review/{{review.response.body[0].id}}/approve
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "canonicalCityId": "city-aldermoor-heights" }
+
+### 5. Reject the other one, ALDERMOOR-ZZ (index [1]): it is not any canonical city, and later runs leave it alone (200)
+POST {{baseUrl}}/api/v1/mapping/crosswalk/review/{{review.response.body[1].id}}/reject
+X-Api-Key: {{adminKey}}
+
+### 6. Decided reviews, for the record (200)
+GET {{baseUrl}}/api/v1/mapping/crosswalk/review?status=all
+X-Api-Key: {{adminKey}}
+
+### 7. Search the city that was just mapped for supplier-c: the supplier is asked, with the code the crosswalk gives (200)
+POST {{baseUrl}}/api/v1/searches
+X-Api-Key: dev-client-key-0000-not-a-secret
+Content-Type: application/json
+
+{
+  "destination": "city-aldermoor-heights",
+  "checkIn": "2027-03-01",
+  "checkOut": "2027-03-04",
+  "rooms": [ { "adults": 2 } ],
+  "nationality": "XA",
+  "currency": "EUR",
+  "suppliers": [ "supplier-c" ]
+}

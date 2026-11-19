@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Hub.Api</RootNamespace>
+    <AssemblyName>Hub.Api</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <ProjectReference Include="..\Hub.Abstractions\Hub.Abstractions.csproj" />
+    <ProjectReference Include="..\Hub.Booking\Hub.Booking.csproj" />
+    <ProjectReference Include="..\Hub.Core\Hub.Core.csproj" />
+    <ProjectReference Include="..\Hub.Mapping\Hub.Mapping.csproj" />
+    <ProjectReference Include="..\Hub.Migrations.Postgres\Hub.Migrations.Postgres.csproj" />
+    <ProjectReference Include="..\Hub.Suppliers.Fakes\Hub.Suppliers.Fakes.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hub.IntegrationTests" />
+    <InternalsVisibleTo Include="Hub.Tests" />
+  </ItemGroup>
+</Project>

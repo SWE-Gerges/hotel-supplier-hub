@@ -1,0 +1,141 @@
+# Quote, book, replay, cancel, sync. Start the API first:
+#   dotnet run --project src/Hub.Api -- --environment Development --urls http://localhost:5104
+# Works with the VS Code REST Client and the JetBrains HTTP client (request names feed the {{...}} references below).
+
+@baseUrl = http://localhost:5104
+@clientKey = dev-client-key-0000-not-a-secret
+@adminKey = dev-admin-key-0000-not-a-secret
+
+### 1. Search supplier-a only, to get offers with ids (200)
+# @name offers
+POST {{baseUrl}}/api/v1/searches
+X-Api-Key: {{clientKey}}
+Content-Type: application/json
+
+{
+  "destination": "city-aldermoor",
+  "checkIn": "2027-03-01",
+  "checkOut": "2027-03-04",
+  "rooms": [ { "adults": 2 } ],
+  "nationality": "XA",
+  "currency": "EUR",
+  "suppliers": [ "supplier-a" ],
+  "maxResults": 3
+}
+
+### 2. Quote the first offer: the supplier re-prices it and the answer is the amount that can be booked (200)
+# A changed price comes back as "priceChanged": { "from", "to" } and is written back to the stored offer.
+# @name quote
+POST {{baseUrl}}/api/v1/quotes
+X-Api-Key: {{clientKey}}
+Content-Type: application/json
+
+{ "offerId": "{{offers.response.body.hotels[0].offers[0].offerId}}" }
+
+### 3. Read the offer as the hub holds it now, including any price a re-quote wrote back (200)
+GET {{baseUrl}}/api/v1/offers/{{offers.response.body.hotels[0].offers[0].offerId}}
+X-Api-Key: {{clientKey}}
+
+### 4. Book against the quote and the exact amount it showed (201). Idempotency-Key is required.
+# @name booking
+POST {{baseUrl}}/api/v1/bookings
+X-Api-Key: {{clientKey}}
+Idempotency-Key: demo-booking-0001
+Content-Type: application/json
+
+{
+  "quoteId": "{{quote.response.body.quoteId}}",
+  "amount": {{quote.response.body.sellingPrice.amount}},
+  "currency": "{{quote.response.body.sellingPrice.currency}}",
+  "leadGuestName": "Test Guest",
+  "paymentMode": "payNow"
+}
+
+### 5. Repeat request 4 with the same key and payload: the stored outcome comes back with Idempotent-Replayed: true (200)
+POST {{baseUrl}}/api/v1/bookings
+X-Api-Key: {{clientKey}}
+Idempotency-Key: demo-booking-0001
+Content-Type: application/json
+
+{
+  "quoteId": "{{quote.response.body.quoteId}}",
+  "amount": {{quote.response.body.sellingPrice.amount}},
+  "currency": "{{quote.response.body.sellingPrice.currency}}",
+  "leadGuestName": "Test Guest",
+  "paymentMode": "payNow"
+}
+
+### 6. Same key, different payload (422, idempotency-key-reused)
+POST {{baseUrl}}/api/v1/bookings
+X-Api-Key: {{clientKey}}
+Idempotency-Key: demo-booking-0001
+Content-Type: application/json
+
+{
+  "quoteId": "{{quote.response.body.quoteId}}",
+  "amount": {{quote.response.body.sellingPrice.amount}},
+  "currency": "{{quote.response.body.sellingPrice.currency}}",
+  "leadGuestName": "Someone Else",
+  "paymentMode": "payNow"
+}
+
+### 7. A new key against the same quote, or any other amount than the one shown (409 with the current quote)
+POST {{baseUrl}}/api/v1/bookings
+X-Api-Key: {{clientKey}}
+Idempotency-Key: demo-booking-0002
+Content-Type: application/json
+
+{
+  "quoteId": "{{quote.response.body.quoteId}}",
+  "amount": 1.00,
+  "currency": "EUR",
+  "leadGuestName": "Test Guest"
+}
+
+### 8. Read the booking (200)
+GET {{baseUrl}}/api/v1/bookings/{{booking.response.body.id}}
+X-Api-Key: {{clientKey}}
+
+### 9. Sync it with the supplier: settles pending and unknown bookings, changes nothing else (200)
+POST {{baseUrl}}/api/v1/bookings/{{booking.response.body.id}}/sync
+X-Api-Key: {{clientKey}}
+
+### 10. Mark it paid (200, admin key). A paid pay-later booking is not cancelled by the expiry service.
+POST {{baseUrl}}/api/v1/bookings/{{booking.response.body.id}}/payments
+X-Api-Key: {{adminKey}}
+
+### 11. Cancel it: cancelled, penaltyApplied, alreadyCancelled or failed, whatever the supplier answered (200)
+POST {{baseUrl}}/api/v1/bookings/{{booking.response.body.id}}/cancel
+X-Api-Key: {{clientKey}}
+
+### 12. Make the supplier lose its answer after booking: the next booking comes back "unknown" (200, admin key)
+PUT {{baseUrl}}/api/v1/admin/suppliers/supplier-a/faults
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "acceptedButLostRate": 1 }
+
+### 13. Quote again and book: the booking is unknown, it is never retried blindly. Run request 2 first, then:
+# @name lost
+POST {{baseUrl}}/api/v1/bookings
+X-Api-Key: {{clientKey}}
+Idempotency-Key: demo-booking-lost
+Content-Type: application/json
+
+{
+  "quoteId": "{{quote.response.body.quoteId}}",
+  "amount": {{quote.response.body.sellingPrice.amount}},
+  "currency": "{{quote.response.body.sellingPrice.currency}}",
+  "leadGuestName": "Test Guest"
+}
+
+### 14. Heal the supplier, then sync: the supplier is asked what it holds and the booking becomes confirmed (200)
+PUT {{baseUrl}}/api/v1/admin/suppliers/supplier-a/faults
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{}
+
+### 15. Sync the unknown booking (200, status "confirmed", no second booking at the supplier)
+POST {{baseUrl}}/api/v1/bookings/{{lost.response.body.id}}/sync
+X-Api-Key: {{clientKey}}

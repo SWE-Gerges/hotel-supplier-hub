@@ -1,0 +1,16 @@
+# Operational endpoints. None of these needs an API key.
+
+@baseUrl = http://localhost:5104
+
+### Liveness: the process is up (200)
+GET {{baseUrl}}/health/live
+
+### Readiness: the supplier registry is not empty and the identity, booking and crosswalk stores answer (200, or 503 when one does not)
+GET {{baseUrl}}/health/ready
+
+### The OpenAPI document (200). The committed copy is docs/openapi.json.
+GET {{baseUrl}}/openapi/v1.json
+
+### A correlation id is echoed back (or generated when absent) in the X-Correlation-Id response header
+GET {{baseUrl}}/health/live
+X-Correlation-Id: demo-correlation-1

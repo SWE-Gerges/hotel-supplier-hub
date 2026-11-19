@@ -1,0 +1,38 @@
+# Identity and alias administration. All of it needs the admin key.
+
+@baseUrl = http://localhost:5104
+@adminKey = dev-admin-key-0000-not-a-secret
+
+### 1. Register a supplier hotel code; a new canonical id is minted (201 with a Location header)
+# @name mint
+POST {{baseUrl}}/api/v1/mapping/identities
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "supplier": "supplier-a", "supplierCode": "demo-hotel-001" }
+
+### 2. Attach another supplier's code to the same canonical hotel (201); repeating it answers 200 "alreadyExists"
+POST {{baseUrl}}/api/v1/mapping/identities
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "supplier": "supplier-b", "supplierCode": "demo-hotel-001-b", "canonicalId": "{{mint.response.body.canonicalId}}" }
+
+### 3. Register a second canonical hotel that will be merged away (201)
+# @name second
+POST {{baseUrl}}/api/v1/mapping/identities
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "supplier": "supplier-c", "supplierCode": "demo-hotel-002" }
+
+### 4. Retire the second hotel in favour of the first (204). Cycles are refused with 409.
+PUT {{baseUrl}}/api/v1/mapping/aliases
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "retiredId": "{{second.response.body.canonicalId}}", "survivorId": "{{mint.response.body.canonicalId}}" }
+
+### 5. Look the retired id up: it resolves to the survivor and shows all supplier records (200)
+GET {{baseUrl}}/api/v1/mapping/hotels/{{second.response.body.canonicalId}}
+X-Api-Key: {{adminKey}}

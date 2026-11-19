@@ -1,0 +1,113 @@
+# Walkthrough of the demo. Start the API first:  dotnet run --project src/Hub.Api -- --environment Development --urls http://localhost:5104
+# Works with the VS Code REST Client and the JetBrains HTTP client. For the stream use curl -N (see request 3).
+
+@baseUrl = http://localhost:5104
+@clientKey = dev-client-key-0000-not-a-secret
+@adminKey = dev-admin-key-0000-not-a-secret
+
+### 1. List the suppliers: capabilities, whether the tenant has them enabled, circuit state, calls in flight (200)
+GET {{baseUrl}}/api/v1/suppliers
+X-Api-Key: {{clientKey}}
+
+### 2. Search and wait for the merged result (200)
+# Three fictional cities exist: city-aldermoor, city-brightwater, city-cedarfall.
+POST {{baseUrl}}/api/v1/searches
+X-Api-Key: {{clientKey}}
+Content-Type: application/json
+
+{
+  "destination": "city-aldermoor",
+  "checkIn": "2027-03-01",
+  "checkOut": "2027-03-04",
+  "rooms": [ { "adults": 2, "childAges": [7] } ],
+  "nationality": "XA",
+  "currency": "EUR",
+  "maxResults": 5
+}
+
+### 3. Stream the same search as server-sent events (200, text/event-stream)
+# The client shows the events as they arrive only when buffering is off, so prefer curl:
+#   curl -N -X POST http://localhost:5104/api/v1/searches/stream \
+#        -H "X-Api-Key: dev-client-key-0000-not-a-secret" -H "Content-Type: application/json" \
+#        -d '{"destination":"city-aldermoor","checkIn":"2027-03-01","checkOut":"2027-03-04","rooms":[{"adults":2}],"nationality":"XA","currency":"EUR"}'
+POST {{baseUrl}}/api/v1/searches/stream
+X-Api-Key: {{clientKey}}
+Content-Type: application/json
+
+{
+  "destination": "city-aldermoor",
+  "checkIn": "2027-03-01",
+  "checkOut": "2027-03-04",
+  "rooms": [ { "adults": 2 } ],
+  "nationality": "XA",
+  "currency": "EUR"
+}
+
+### 4. Break supplier-b: every call fails with "unavailable" (200, admin key)
+PUT {{baseUrl}}/api/v1/admin/suppliers/supplier-b/faults
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "errorRate": 1, "errorKind": "unavailable" }
+
+### 5. Search again: supplier-b is reported as failed (status "partial") while the others complete (200)
+POST {{baseUrl}}/api/v1/searches
+X-Api-Key: {{clientKey}}
+Content-Type: application/json
+
+{
+  "destination": "city-aldermoor",
+  "checkIn": "2027-03-01",
+  "checkOut": "2027-03-04",
+  "rooms": [ { "adults": 2 } ],
+  "nationality": "XA",
+  "currency": "EUR",
+  "maxResults": 3
+}
+
+### 6. Make supplier-b hang instead (200)
+PUT {{baseUrl}}/api/v1/admin/suppliers/supplier-b/faults
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "hangRate": 1 }
+
+### 7. Start a long-running search under a known id; supplier-b never answers, the others finish (200, SSE)
+# Run this one with curl -N so you can watch it, then cancel it from a second terminal with request 8.
+POST {{baseUrl}}/api/v1/searches/stream
+X-Api-Key: {{clientKey}}
+Content-Type: application/json
+
+{
+  "searchId": "demo-run",
+  "waitMs": 30000,
+  "destination": "city-aldermoor",
+  "checkIn": "2027-03-01",
+  "checkOut": "2027-03-04",
+  "rooms": [ { "adults": 2 } ],
+  "nationality": "XA",
+  "currency": "EUR"
+}
+
+### 8. Cancel it (204; the stream ends with a "completed" event whose status is "cancelled")
+DELETE {{baseUrl}}/api/v1/searches/demo-run
+X-Api-Key: {{clientKey}}
+
+### 9. Heal supplier-b: an empty profile means no faults (200)
+PUT {{baseUrl}}/api/v1/admin/suppliers/supplier-b/faults
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{}
+
+### 10. Inspect a canonical hotel: its supplier records, following merge history (200, admin key)
+GET {{baseUrl}}/api/v1/mapping/hotels/H-000001
+X-Api-Key: {{adminKey}}
+
+### 11. Resume a stream: replay the events after Last-Event-ID, then continue live until the search completes (200, SSE)
+# The search keeps running for a grace period after its last listener leaves, so a dropped connection can pick up where it
+# stopped. Use curl -N to watch:  curl -N -H "X-Api-Key: dev-client-key-0000-not-a-secret" -H "Last-Event-ID: 3" http://localhost:5104/api/v1/searches/demo-run/events
+# An unknown search answers 404 and events that fell out of the bounded buffer answer 410, both as problem details.
+GET {{baseUrl}}/api/v1/searches/demo-run/events
+X-Api-Key: {{clientKey}}
+Last-Event-ID: 3
