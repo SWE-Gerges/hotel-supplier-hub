@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Hub.Bench</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <ProjectReference Include="..\..\src\Hub.Abstractions\Hub.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Core\Hub.Core.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Mapping\Hub.Mapping.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Suppliers.Fakes\Hub.Suppliers.Fakes.csproj" />
+  </ItemGroup>
+</Project>
