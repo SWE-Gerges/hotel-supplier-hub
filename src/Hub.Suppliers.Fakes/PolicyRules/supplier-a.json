@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "supplier": "supplier-a",
+  "strategy": "textPatterns",
+  "source": "cancellationText",
+  "dateFormats": ["yyyy-MM-dd", "dd/MM/yyyy", "d MMM yyyy", "d MMMM yyyy", "MMMM d, yyyy", "MMM d, yyyy", "dd.MM.yyyy"],
+  "replacements": [
+    { "regex": "\\b(?:the )?first night\\b", "replace": "1 night" },
+    { "regex": "\\bone night\\b", "replace": "1 night" },
+    { "regex": "\\btwo nights\\b", "replace": "2 nights" },
+    { "regex": "\\bfree of charge\\b", "replace": "free" },
+    { "regex": "\\bcancel free\\b", "replace": "free cancellation" },
+    { "regex": "\\bcancellations? free\\b", "replace": "free cancellation" },
+    { "regex": "\\bper ?cent\\b", "replace": "%" }
+  ],
+  "nonRefundablePatterns": [
+    "non[- ]?refundable",
+    "cannot be (?:cancell?ed|changed)",
+    "no free cancell?ation",
+    "\\b100 ?% (?:penalty|charge)"
+  ],
+  "patterns": [
+    {
+      "name": "free-until-then-percent",
+      "regex": "free cancell?ation (?:until|before|up to|by) (?<date>[0-9A-Za-z ,./-]+?) ?[.;,:-]* ?(?:afterwards|after that|thereafter|then)\\W+[^0-9]{0,24}(?<p>\\d+(?:\\.\\d+)?) ?%",
+      "tiers": [ { "from": "{date}", "penalty": { "kind": "percent", "value": "{p}" } } ]
+    },
+    {
+      "name": "free-until-then-nights",
+      "regex": "free cancell?ation (?:until|before|up to|by) (?<date>[0-9A-Za-z ,./-]+?) ?[.;,:-]* ?(?:afterwards|after that|thereafter|then)\\W+[^0-9]{0,24}(?<n>\\d+) nights?",
+      "tiers": [ { "from": "{date}", "penalty": { "kind": "nights", "value": "{n}" } } ]
+    },
+    {
+      "name": "charge-after-date-nights",
+      "regex": "cancell?ations? (?:made )?(?:after|from) (?<date>[0-9A-Za-z ,./-]+?) (?:incur|are charged|will be charged|cost)[^0-9]{0,24}(?<n>\\d+) nights?",
+      "tiers": [ { "from": "{date}", "penalty": { "kind": "nights", "value": "{n}" } } ]
+    },
+    {
+      "name": "charge-after-date-percent",
+      "regex": "cancell?ations? (?:made )?(?:after|from) (?<date>[0-9A-Za-z ,./-]+?) (?:incur|are charged|will be charged|cost)[^0-9]{0,24}(?<p>\\d+(?:\\.\\d+)?) ?%",
+      "tiers": [ { "from": "{date}", "penalty": { "kind": "percent", "value": "{p}" } } ]
+    },
+    {
+      "name": "free-then-staged-percent",
+      "regex": "free cancell?ation (?:until|before|up to) (?<date>[0-9A-Za-z ,./-]+?)[.;,] ?(?<p1>\\d+) ?% (?:of the total )?(?:is |will be )?charged (?:until|before|up to) (?<date2>[0-9A-Za-z ,./-]+?)[.;,] ?(?:then|after that|afterwards) (?<p2>\\d+) ?%",
+      "tiers": [
+        { "from": "{date}", "penalty": { "kind": "percent", "value": "{p1}" } },
+        { "from": "{date2}", "penalty": { "kind": "percent", "value": "{p2}" } }
+      ]
+    }
+  ]
+}

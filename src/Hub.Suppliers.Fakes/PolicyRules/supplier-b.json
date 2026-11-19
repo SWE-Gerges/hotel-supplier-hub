@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "supplier": "supplier-b",
+  "strategy": "codeTable",
+  "dateFormats": ["yyyy-MM-dd"],
+  "dateKey": "cancelUntil",
+  "codeKey": "penaltyCode",
+  "missingDate": "nonRefundable",
+  "codes": {
+    "NIGHT1": { "kind": "nights", "value": "1" },
+    "NIGHT2": { "kind": "nights", "value": "2" },
+    "PCT50": { "kind": "percent", "value": "50" },
+    "FULL": { "kind": "percent", "value": "100" }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "supplier": "supplier-c",
+  "strategy": "delimited",
+  "source": "policyTiers",
+  "dateFormats": ["yyyy-MM-dd"],
+  "tierSeparator": ";",
+  "fieldSeparator": "|",
+  "fields": ["from", "kind", "value"],
+  "kindMap": { "nights": "nights", "percent": "percent", "fixed": "fixed" }
+}

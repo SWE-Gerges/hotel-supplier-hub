@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Hub.Suppliers.Fakes</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Hub.Abstractions\Hub.Abstractions.csproj" />
+    <ProjectReference Include="..\Hub.Core\Hub.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="PolicyRules/*.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hub.Tests" />
+  </ItemGroup>
+</Project>
