@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (warnings are errors)
+        run: dotnet build --no-restore -warnaserror
+
+      - name: Tests (unit, contract and API tests; nothing else needs to be installed)
+        run: dotnet test --no-build
+
+      - name: OpenAPI snapshot check
+        run: dotnet test --no-build tests/Hub.IntegrationTests --filter-class Hub.Tests.OpenApiSnapshotTests
+
+      - name: The committed OpenAPI document is current
+        run: git diff --exit-code docs/openapi.json
