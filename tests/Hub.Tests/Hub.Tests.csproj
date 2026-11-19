@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The API's real settings, so tests of the crosswalk and bookings use the same canonical cities and country aliases. -->
+    <Content Include="../../src/Hub.Api/appsettings.json" Link="appsettings.api.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hub.Abstractions\Hub.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Core\Hub.Core.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Booking\Hub.Booking.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Mapping\Hub.Mapping.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Suppliers.Fakes\Hub.Suppliers.Fakes.csproj" />
+    <ProjectReference Include="..\..\src\Hub.Migrations.Postgres\Hub.Migrations.Postgres.csproj" />
+  </ItemGroup>
+</Project>

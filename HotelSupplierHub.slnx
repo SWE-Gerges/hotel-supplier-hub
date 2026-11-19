@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Hub.Abstractions/Hub.Abstractions.csproj" />
+    <Project Path="src/Hub.Api/Hub.Api.csproj" />
+    <Project Path="src/Hub.Booking/Hub.Booking.csproj" />
+    <Project Path="src/Hub.Core/Hub.Core.csproj" />
+    <Project Path="src/Hub.Mapping/Hub.Mapping.csproj" />
+    <Project Path="src/Hub.Migrations.Postgres/Hub.Migrations.Postgres.csproj" />
+    <Project Path="src/Hub.Suppliers.Fakes/Hub.Suppliers.Fakes.csproj" />
+  </Folder>
+  <Folder Name="/bench/">
+    <Project Path="bench/Hub.Bench/Hub.Bench.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Hub.IntegrationTests/Hub.IntegrationTests.csproj" />
+    <Project Path="tests/Hub.Tests/Hub.Tests.csproj" />
+  </Folder>
+</Solution>
