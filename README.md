@@ -272,7 +272,7 @@ Other things worth knowing:
   the benchmark numbers are one sample from one machine.
 - The crosswalk thresholds and the same-place limits were tuned on fake data. The policy rules cover the phrasings the fakes use
   and a few more; real suppliers need their own golden tables.
-- The CI workflow in `.github/workflows/ci.yml` has not been run here.
+- The CI workflow in `.github/workflows/ci.yml` runs on every push to `main` and every pull request (`ubuntu-latest`) and passed on its first run. It starts no database server, so the PostgreSQL items above stay unverified there too.
 
 ## Roadmap
 
